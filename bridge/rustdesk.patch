@@ -1,0 +1,77 @@
+diff --git a/Cargo.lock b/Cargo.lock
+index 304851897..9068e5987 100644
+--- a/Cargo.lock
++++ b/Cargo.lock
+@@ -2305,7 +2305,7 @@ version = "0.5.2"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+ checksum = "330c60081dcc4c72131f8eb70510f1ac07223e5d4163db481a04a0befcffa412"
+ dependencies = [
+- "libloading 0.7.4",
++ "libloading 0.8.4",
+ ]
+ 
+ [[package]]
+@@ -4243,6 +4243,12 @@ dependencies = [
+  "rayon",
+ ]
+ 
++[[package]]
++name = "jpeg-encoder"
++version = "0.6.1"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "b454d911ac55068f53495488d8ccd0646eaa540c033a28ee15b07838afafb01f"
++
+ [[package]]
+ name = "js-sys"
+ version = "0.3.77"
+@@ -4404,7 +4410,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
+ checksum = "e310b3a6b5907f99202fcdb4960ff45b93735d7c7d96b760fcff8db2dc0e103d"
+ dependencies = [
+  "cfg-if 1.0.0",
+- "windows-targets 0.48.5",
++ "windows-targets 0.52.6",
+ ]
+ 
+ [[package]]
+@@ -7105,6 +7111,7 @@ dependencies = [
+  "impersonate_system",
+  "include_dir",
+  "jni",
++ "jpeg-encoder",
+  "kcp-sys",
+  "keepawake",
+  "lazy_static",
+diff --git a/Cargo.toml b/Cargo.toml
+index 31cfcd446..b5c253cfb 100644
+--- a/Cargo.toml
++++ b/Cargo.toml
+@@ -20,6 +20,10 @@ path = "src/naming.rs"
+ name = "service"
+ path = "src/service.rs"
+ 
++[[bin]]
++name = "rustdesk-claude"
++path = "src/claude_bridge_main.rs"
++
+ [features]
+ inline = []
+ use_samplerate = ["samplerate", "libsamplerate-sys"]
+@@ -62,6 +66,7 @@ cfg-if = "1.0"
+ lazy_static = "1.4"
+ sha2 = "0.10"
+ repng = "0.2"
++jpeg-encoder = "0.6"
+ zstd = "0.13"
+ xxhash-rust = { version = "0.8", features = ["xxh3"] }
+ parity-tokio-ipc = { git = "https://github.com/rustdesk-org/parity-tokio-ipc" }
+diff --git a/src/lib.rs b/src/lib.rs
+index f6e48a1be..9e511346a 100644
+--- a/src/lib.rs
++++ b/src/lib.rs
+@@ -78,3 +78,6 @@ pub mod privacy_mode;
+ pub mod virtual_display_manager;
+ 
+ mod kcp_stream;
++
++#[cfg(windows)]
++pub mod claude_bridge;

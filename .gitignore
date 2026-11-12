@@ -1,0 +1,4 @@
+peers.json
+__pycache__/
+*.log
+.claude-plugin/types/

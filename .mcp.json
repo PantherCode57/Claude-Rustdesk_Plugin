@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "rustdesk": {
+      "command": "python",
+      "args": ["${CLAUDE_PLUGIN_ROOT}/server/claude_bridge_mcp.py"]
+    }
+  }
+}

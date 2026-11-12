@@ -1,0 +1,6 @@
+{
+  "name": "rustdesk-mcp",
+  "description": "Control another computer through RustDesk from Claude without using your own screen",
+  "owner": { "name": "resuelvemeesta57-design" },
+  "plugins": [{ "name": "rustdesk-mcp", "source": "./" }]
+}
