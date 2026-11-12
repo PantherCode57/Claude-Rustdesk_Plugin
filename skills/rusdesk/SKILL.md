@@ -15,16 +15,26 @@ If the `rustdesk_*` tools are not available, say so and stop; do not fall back t
 
 ## Starting
 
-1. `rustdesk_status` lists the computers the user has set up (their names) and the path of the
-   peers file.
-2. No computer listed, or the connection fails for a missing or wrong password: the RustDesk ID
-   and permanent password go in the peers file, written by the user. Tell them the path and the
-   format (`{ "oficina": { "id": "123456789", "password": "..." } }`) and offer to open the file
-   for them. Never ask for the password in chat, never read the peers file, never write the
-   password yourself.
-3. One computer listed: use it. Several, and the user did not say which: ask.
-4. `rustdesk_connect` with that name. Its answer is text: the screen size, the places already
+When the user types `/rusdesk` with nothing after it, the plugin opens a picker in the band
+above the prompt (Claude desktop app and terminal): the computers already saved, each one a
+button, plus "Agregar nuevo", a form with an ID field and a password field. The form saves to
+the peers file by itself; you never see the password. When the user picks or saves a computer,
+a message arrives asking you to connect to it by name.
+
+1. The user typed only `/rusdesk` and named no computer and no task: answer in one short line
+   that they can choose the computer in the box above the prompt, and stop. Do not call any
+   tool, do not ask for the ID or the password, do not explain the peers file.
+2. The user named a computer or a task: `rustdesk_status` lists the saved computers by name (a
+   computer added through the form is named by its ID). One listed: use it. Several, and the
+   user did not say which: ask them to type `/rusdesk` and pick it.
+3. `rustdesk_connect` with that name. Its answer is text: the screen size, the places already
    known on that PC and its tips. Read them; they are what lets you work without looking.
+4. No computer saved, or the connection fails for a missing or wrong password: ask the user to
+   type `/rusdesk` and fill in "Agregar nuevo" (saving the same ID again replaces its
+   password). Where the band is not drawn (mobile, other clients), the ID and permanent
+   password go in the peers file, written by the user: give the path from `rustdesk_status` and
+   the format (`{ "oficina": { "id": "123456789", "password": "..." } }`). Never ask for the
+   password in chat, never read the peers file, never write the password yourself.
 
 ## Working: text first, pictures last
 
@@ -73,5 +83,5 @@ view is the page `http://127.0.0.1:21500/` on the user's machine.
 
 - "rustdesk-claude.exe not found": the plugin's `bin` folder is missing the bridge; it is
   Windows-only and is built from the patch in the plugin's `bridge` folder.
-- "Wrong password" / "No password": the user has to fix the peers file (see Starting).
+- "Wrong password" / "No password": the user saves it again with `/rusdesk` (see Starting).
 - The MCP server does not start: it needs `python` on the PATH.

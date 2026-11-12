@@ -37,7 +37,7 @@ def ensure_home():
     os.makedirs(MAPS, exist_ok=True)
     if not os.path.exists(PEERS):
         with open(PEERS, "w", encoding="utf-8") as f:
-            f.write('{\n  "oficina": { "id": "", "password": "" }\n}\n')
+            f.write("{}\n")
 
 
 def http(method, path, body=None):

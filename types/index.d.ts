@@ -1,5 +1,7 @@
 export type VisorFrame = string
 export type VisorStep = { content: string; status: string }
+export type VisorPeer = { name: string; id: string }
+export type VisorPicker = 'closed' | 'list' | 'new'
 
 declare module 'claude-code' {
   interface PluginState {
@@ -8,6 +10,9 @@ declare module 'claude-code' {
       isHidden: boolean
       plan: VisorStep[]
       activity: string
+      picker: VisorPicker
+      peers: VisorPeer[]
+      notice: string
     }
   }
 }
