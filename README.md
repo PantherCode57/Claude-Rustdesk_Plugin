@@ -22,17 +22,17 @@ nuevo que pulsa se apunta solo en el mapa de ese ordenador para la próxima vez.
 En una terminal:
 
 ```
-claude plugin install rustdesk-mcp --marketplace resuelvemeesta57-design/rustdesk-mcp
+claude plugin install rustdesk-mcp --marketplace PantherCode57/rustdesk-mcp
 ```
 
 O dentro de una sesión de Claude Code en terminal:
 
 ```
-/plugin install rustdesk-mcp --marketplace resuelvemeesta57-design/rustdesk-mcp
+/plugin install rustdesk-mcp --marketplace PantherCode57/rustdesk-mcp
 ```
 
 En la app de escritorio: pulsa + junto a la barra de escribir, Plugins, Add marketplace con
-`resuelvemeesta57-design/rustdesk-mcp` y después Add plugin.
+`PantherCode57/rustdesk-mcp` y después Add plugin.
 
 El repositorio es privado: solo se instala en equipos donde GitHub ya esté configurado con una
 cuenta que tenga acceso (`gh auth login` y `gh auth setup-git`).

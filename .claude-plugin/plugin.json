@@ -2,6 +2,6 @@
   "name": "rustdesk-mcp",
   "version": "0.2.0",
   "description": "Control another computer through RustDesk without using your own screen, mouse or keyboard: by keyboard shortcuts, program names and a learned map of coordinates, with a live view above the prompt",
-  "author": { "name": "resuelvemeesta57-design" },
+  "author": { "name": "PantherCode57" },
   "types": "./types/index.d.ts"
 }
