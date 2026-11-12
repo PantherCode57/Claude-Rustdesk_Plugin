@@ -1,6 +1,7 @@
 """MCP server (stdio) that lets Claude drive a remote PC through the RustDesk Claude bridge.
 
-It only talks to the bridge's local HTTP API (bin/rustdesk-claude.exe, http://127.0.0.1:21500).
+It only talks to the bridge's local HTTP API (bin/rustdesk-claude.exe). Each server starts its
+own bridge on its own port, so every conversation has its own remote session and its own view.
 Standard library only.
 
 Design: text first. Actions return a line of text, not a picture; a screenshot is taken only
@@ -10,6 +11,7 @@ opened by name, and keyboard shortcuts replace hunting for buttons.
 import base64
 import json
 import os
+import socket
 import subprocess
 import sys
 import time
@@ -17,7 +19,9 @@ import urllib.error
 import urllib.request
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-BASE = os.environ.get("RUSTDESK_CLAUDE_URL", "http://127.0.0.1:21500")
+# Set only to share one bridge that something else started; otherwise this server starts its own.
+BASE = os.environ.get("RUSTDESK_CLAUDE_URL", "")
+bridge = None  # the bridge process this server started
 # The person's own data (peers with their passwords, the maps Claude learns) lives outside the
 # plugin folder, so updating or reinstalling the plugin never touches it.
 HOME = os.environ.get("RUSTDESK_CLAUDE_HOME") or (
@@ -40,24 +44,71 @@ def ensure_home():
             f.write("{}\n")
 
 
+def kill_with_me(proc):
+    """Tie the bridge's life to this server's: when this process ends, however it ends, Windows
+    closes the job and the bridge with it, so no remote session is left open behind a closed chat."""
+    if os.name != "nt":
+        return
+    import ctypes
+    from ctypes import wintypes
+
+    class Basic(ctypes.Structure):
+        _fields_ = [("PerProcessUserTimeLimit", ctypes.c_int64), ("PerJobUserTimeLimit", ctypes.c_int64),
+                    ("LimitFlags", wintypes.DWORD), ("MinimumWorkingSetSize", ctypes.c_size_t),
+                    ("MaximumWorkingSetSize", ctypes.c_size_t), ("ActiveProcessLimit", wintypes.DWORD),
+                    ("Affinity", ctypes.c_size_t), ("PriorityClass", wintypes.DWORD),
+                    ("SchedulingClass", wintypes.DWORD)]
+
+    class Extended(ctypes.Structure):
+        _fields_ = [("Basic", Basic), ("IoInfo", ctypes.c_uint64 * 6), ("ProcessMemoryLimit", ctypes.c_size_t),
+                    ("JobMemoryLimit", ctypes.c_size_t), ("PeakProcessMemoryUsed", ctypes.c_size_t),
+                    ("PeakJobMemoryUsed", ctypes.c_size_t)]
+
+    k32 = ctypes.WinDLL("kernel32", use_last_error=True)
+    k32.CreateJobObjectW.restype = wintypes.HANDLE
+    k32.CreateJobObjectW.argtypes = [ctypes.c_void_p, wintypes.LPCWSTR]
+    k32.SetInformationJobObject.argtypes = [wintypes.HANDLE, ctypes.c_int, ctypes.c_void_p, wintypes.DWORD]
+    k32.AssignProcessToJobObject.argtypes = [wintypes.HANDLE, wintypes.HANDLE]
+    job = k32.CreateJobObjectW(None, None)
+    info = Extended()
+    info.Basic.LimitFlags = 0x2000  # JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE
+    if job and k32.SetInformationJobObject(job, 9, ctypes.byref(info), ctypes.sizeof(info)):
+        k32.AssignProcessToJobObject(job, int(proc._handle))
+    proc.job = job  # kept open for as long as this server lives
+
+
+def start_bridge():
+    global BASE, bridge
+    exe = next((e for e in EXES if e and os.path.exists(e)), None)
+    if not exe:
+        raise RuntimeError("rustdesk-claude.exe not found (looked in the plugin's bin folder)")
+    ensure_home()
+    with socket.socket() as s:  # a free port of our own
+        s.bind(("127.0.0.1", 0))
+        port = s.getsockname()[1]
+    env = dict(os.environ, RUSTDESK_CLAUDE_PEERS=PEERS)
+    flags = 0x08000000 if os.name == "nt" else 0  # no console window
+    bridge = subprocess.Popen([exe, str(port)], env=env, creationflags=flags, stdin=subprocess.DEVNULL,
+                              stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    kill_with_me(bridge)
+    BASE = f"http://127.0.0.1:{port}"
+    for _ in range(20):
+        time.sleep(0.5)
+        try:
+            _http("GET", "/status")
+            return
+        except ConnectionError:
+            pass
+    raise RuntimeError(f"Bridge could not be started from {exe}")
+
+
 def http(method, path, body=None):
+    if not BASE or (bridge is not None and bridge.poll() is not None):
+        start_bridge()
     try:
         return _http(method, path, body)
     except ConnectionError:
-        exe = next((e for e in EXES if e and os.path.exists(e)), None)
-        if not exe:
-            raise RuntimeError("rustdesk-claude.exe not found (looked in the plugin's bin folder)")
-        ensure_home()
-        env = dict(os.environ, RUSTDESK_CLAUDE_PEERS=PEERS)
-        flags = 0x08000008 if os.name == "nt" else 0  # detached, no console window
-        subprocess.Popen([exe], env=env, creationflags=flags, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        for _ in range(20):
-            time.sleep(0.5)
-            try:
-                return _http(method, path, body)
-            except ConnectionError:
-                pass
-        raise RuntimeError(f"Bridge not reachable at {BASE} and could not be started from {exe}")
+        raise RuntimeError(f"Bridge not reachable at {BASE}")
 
 
 def _http(method, path, body=None):
@@ -93,7 +144,8 @@ def status(_):
     s = get_status()
     lines = [f"status: {s['status']}" + (f" ({s['message']})" if s["message"] else ""),
              f"peer: {s['peer'] or '-'}", f"screen: {s['width']}x{s['height']}",
-             f"peers available: {', '.join(s['peers']) or 'none'}", f"peers file: {s['peers_file']}"]
+             f"peers available: {', '.join(s['peers']) or 'none'}", f"peers file: {s['peers_file']}",
+             f"live view: {BASE}/"]
     return text("\n".join(lines))
 
 
@@ -109,6 +161,7 @@ def connect(a):
             m = load_map()
             places = sorted(list(m.get("points", {})) + list(m.get("vistos", {})))
             out = [f"Connected to {a['peer']}: {s['width']}x{s['height']}.",
+                   f"Live view: {BASE}/",
                    "No screenshot taken. Work by name and keyboard; look only when you must.",
                    "Places known on this PC: " + (", ".join(places) or "none yet")]
             out += ["Tip: " + t for t in m.get("tips", [])]
@@ -452,4 +505,8 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    finally:
+        if bridge is not None:
+            bridge.terminate()

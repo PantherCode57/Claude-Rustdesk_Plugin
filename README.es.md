@@ -70,8 +70,8 @@ En la app de escritorio: **+** junto a la barra de escribir → Plugins → Add 
 - **Servidor MCP `rustdesk`**: herramientas para conectar, abrir programas por nombre, pulsar
   atajos, escribir, hacer clic por nombre o por coordenadas y mirar la pantalla solo cuando hace falta.
 - **Skill `/rusdesk`**: hace que Claude use estas herramientas en vez de ocupar tu pantalla.
-- **Visor**: la franja encima de la barra de escribir (app de escritorio), o
-  `http://127.0.0.1:21500/` en un navegador.
+- **Visor**: la franja encima de la barra de escribir (app de escritorio), o la dirección
+  que te da Claude, en un navegador. Cada conversación tiene su propia conexión y su propio visor.
 - **Puente** (`bin/rustdesk-claude.exe`): un cliente de RustDesk sin ventana, compilado del
   código oficial de RustDesk más el pequeño cambio que está en [`bridge/`](bridge/).
 

@@ -68,7 +68,8 @@ otherwise have to take a screenshot right after it anyway.
 In the Claude desktop app a band above the prompt shows the remote screen live, your pointer as
 an orange arrow, and your task list. Keep a short task list for anything with more than one step
 so they can follow what is done, what you are doing and what is left. Anywhere else, the live
-view is the page `http://127.0.0.1:21500/` on the user's machine.
+view is the "live view" address that `rustdesk_connect` and `rustdesk_status` give, opened in a
+browser on the user's machine. Each conversation has its own remote session and its own view.
 
 ## It is someone's real computer
 

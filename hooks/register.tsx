@@ -3,9 +3,6 @@ import type { Register } from 'claude-code'
 
 import type { VisorPeer, VisorPicker, VisorStep } from '../types'
 
-// The remote screen as an SVG (a small JPEG inside it, Claude's pointer drawn over it), served
-// by the bridge. Empty while there is no remote session: then the band is not drawn at all.
-const FRAME_URL = 'http://127.0.0.1:21500/frame.svg?max=640'
 const MAX_ROWS = 8
 const DEFAULT_HOME = 'C:\\RustDeskClaude'
 
@@ -16,6 +13,9 @@ const activity = atom({ plugin: 'rustdesk-mcp', key: 'activity' } as const, '')
 const picker = atom({ plugin: 'rustdesk-mcp', key: 'picker' } as const, 'closed' as VisorPicker)
 const peers = atom({ plugin: 'rustdesk-mcp', key: 'peers' } as const, [] as VisorPeer[])
 const notice = atom({ plugin: 'rustdesk-mcp', key: 'notice' } as const, '')
+// The port of this conversation's own bridge, learned from its rustdesk tools' answers; 0 until
+// this conversation connects. Another conversation's remote session is never drawn here.
+const port = atom({ plugin: 'rustdesk-mcp', key: 'port' } as const, 0)
 
 type Args = Record<string, unknown>
 type PeersFile = Record<string, { id?: string; password?: string }>
@@ -94,10 +94,15 @@ export const register: Register = on => {
 
   on('session.start', async ($, e, next) => {
     $.clock.every(1000, async () => {
+      // The remote screen as an SVG (a small JPEG inside it, Claude's pointer drawn over it).
+      // Empty while this conversation has no remote session: then the band is not drawn.
       let frame = ''
       try {
-        const r = await $.http.fetch(FRAME_URL)
-        frame = r.ok ? r.text : ''
+        const own = await read($, port)
+        if (own !== 0) {
+          const r = await $.http.fetch(`http://127.0.0.1:${own}/frame.svg?max=640`)
+          frame = r.ok ? r.text : ''
+        }
       } catch {
         frame = ''
       }
@@ -162,7 +167,23 @@ export const register: Register = on => {
       // the list is a convenience; a missed update is not worth a failed tool call
     }
 
-    return next(e)
+    const result = await next(e)
+
+    try {
+      if (remote !== null && (remote[1] === 'connect' || remote[1] === 'status')) {
+        const found = /127\.0\.0\.1:(\d+)/.exec(JSON.stringify(result))
+        if (found !== null && found[1] !== undefined) {
+          const own = Number(found[1])
+          await update($, port, () => own)
+        }
+      } else if (remote !== null && remote[1] === 'disconnect') {
+        await update($, port, () => 0)
+      }
+    } catch {
+      // same: the band is a convenience
+    }
+
+    return result
   }).catch(($, e, next) => next(e))
 
   on('ui.render', { component: 'AbovePrompt' }, async ($, e, next) => {

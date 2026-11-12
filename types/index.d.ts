@@ -13,6 +13,7 @@ declare module 'claude-code' {
       picker: VisorPicker
       peers: VisorPeer[]
       notice: string
+      port: number
     }
   }
 }

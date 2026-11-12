@@ -69,7 +69,7 @@ In the desktop app: **+** next to the prompt → Plugins → Add marketplace →
 - **MCP server `rustdesk`** – tools to connect, open programs by name, press shortcuts, type,
   click by name or by coordinates, and look at the screen only when needed.
 - **Skill `/rusdesk`** – makes Claude use these tools instead of taking over your screen.
-- **Live view** – the band above the prompt (desktop app), or `http://127.0.0.1:21500/` in a browser.
+- **Live view** – the band above the prompt (desktop app), or the address Claude gives you, in a browser. Each conversation has its own remote session and its own view.
 - **Bridge** (`bin/rustdesk-claude.exe`) – a RustDesk client with no window, built from the
   official RustDesk source plus the small patch in [`bridge/`](bridge/).
 
