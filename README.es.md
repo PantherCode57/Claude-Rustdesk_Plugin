@@ -2,6 +2,8 @@
   <img src="docs/img/portada.png" alt="Claude trabajando en un ordenador remoto mientras tú sigues usando el tuyo" width="100%">
 </p>
 
+<p align="center"><img src="docs/img/icono.png" alt="" width="88"></p>
+
 <h1 align="center">Claude × RustDesk</h1>
 
 <p align="center">
