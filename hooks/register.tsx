@@ -148,7 +148,9 @@ export const register: Register = on => {
   on('tool.call', async ($, e, next) => {
     const tool: string = e.tool
     const a = e as unknown as Args
-    const remote = /rustdesk_([a-z_]+)$/.exec(tool)
+    // The tool's own name is what follows the last "__": the server part before it also holds
+    // "rustdesk_", so matching on the whole name would take the wrong piece.
+    const remote = /^rustdesk_([a-z_]+)$/.exec(tool.slice(tool.lastIndexOf('__') + 2))
 
     // Watching only: whatever goes wrong here must never stop the tool call itself.
     try {
